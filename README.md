@@ -95,7 +95,6 @@ http {
 
 ## Usage
 
-
 ###Options
 
 lua-resty-influx provides a pure object-based interface, as well as a buffering interface that stores data points per-worker, and then buffers asynchronously via `ngx.timer.at`. Creation of the buffering interface should be handled in the `init_worker_by_lua` phase via the `resty.influx.buffer.init` function; creation of the object-oriented interface should be handled in your appropriate phase handler via `resty.influx.object:new`. In both cases, the following options are available:
@@ -128,7 +127,9 @@ Sets the hostname to which `resty.http` will define the `Host` header for HTTP r
 
 *Default*: http
 
-Sets the protocol by which `resty.influx` will connect to the remote server. Note that UDP can present a significant performance improvement, particularly when sending many small sets of data points, at the cost of error handling.
+Sets the protocol by which `resty.influx` will connect to the remote server. Currently `http` and `udp` protocols are supported.
+
+Note that UDP can present a significant performance improvement, particularly when sending many small sets of data points, at the cost of error handling.
 
 ####precision
 
@@ -138,7 +139,7 @@ Sets the timestamp precision by which `resty.influx` will define timestamps. Cur
 
 ###Object-Oriented Interface
 
-The following methods are available via the objection interface:
+The following methods are available via the object interface:
 
 ####influx:set_measurement
 
