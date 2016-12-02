@@ -128,7 +128,6 @@ Sets the hostname to which `resty.http` will define the `Host` header for HTTP r
 *Default*: http
 
 Sets the protocol by which `resty.influx` will connect to the remote server. Note that UDP can present a significant performance improvement, particularly when sending many small sets of data points, at the cost of error handling and authentication.
->>>>>>> Refactor and clean up
 
 ####precision
 
