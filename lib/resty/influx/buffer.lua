@@ -63,8 +63,7 @@ function _M.flush()
 	local msg = tbl_cat(msg_buf, "\n")
 	_M.clear()
 
-	--return timer_at(0, _do_write, msg)
-	_do_write(nil, msg)
+	return timer_at(0, _do_write, msg)
 end
 
 function _M.init(opts)
