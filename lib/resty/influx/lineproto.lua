@@ -5,6 +5,13 @@ local str_find = string.find
 local str_fmt  = string.format
 local tbl_cat  = table.concat
 
+local WARN = ngx.WARN
+
+local log  = ngx.log
+local warn = function(msg)
+	return log(WARN, msg)
+end
+
 _M.version = "0.2"
 
 -- quoting routines based on
@@ -40,6 +47,15 @@ function _M.quote_measurement(value)
 end
 
 function _M.build_tag_set(tags)
+	if not tags then
+		return {}
+	end
+
+	if type(tags) ~= 'table' then
+		warn('Invalid tags table')
+		return nil
+	end
+
 	local tag_set = {}
 
 	for i = 1, #tags do
@@ -57,6 +73,11 @@ function _M.build_tag_set(tags)
 end
 
 function _M.build_field_set(fields)
+	if type(fields) ~= 'table' then
+		warn('Invalid fields table')
+		return nil
+	end
+
 	local field_set = {}
 
 	for i = 1, #fields do
