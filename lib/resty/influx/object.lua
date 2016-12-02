@@ -1,6 +1,7 @@
 local _M = {}
 
 local lp   = require "resty.influx.lineproto"
+local util = require "resty.influx.util"
 local http = require "resty.http"
 
 local log = ngx.log
@@ -19,7 +20,7 @@ local ERR = ngx.ERR
 local WRN = ngx.WARN
 local DBG = ngx.DEBUG
 
-_M.version = "0.1"
+_M.version = "0.2"
 
 local mt = {
 		__index = _M,
@@ -35,66 +36,13 @@ local mt = {
 			) end
 }
 
-function _M.write_udp(self, msg)
-	local sock = udp()
-
-	local ok, err_msg
-
-	ok, err_msg = sock:setpeername(self.host, self.port)
-
-	if (not ok) then
-		return false, err_msg
-	end
-
-	ok, err_msg = sock:send(msg)
-
-	if (not ok) then
-		return false, err_msg
-	end
-
-	return true
-end
-
-function _M.write_http(self, msg)
-	local httpc = http.new()
-
-	httpc:set_timeout(1000)
-	local ok, err_msg = httpc:connect(self.host, self.port)
-
-	if (not ok) then
-		return false, err_msg
-	end
-
-	local query_str = str_fmt("/write?db=%s&precision=%s", self.db, self.precision)
-
-	local res, err_msg = httpc:request({
-		path   = query_str,
-		method = 'POST',
-		headers = {
-			["Host"] = self.hostname or self.host
-		},
-		body = msg,
-	})
-
-	if (res.status == 204) then
-		return true
-	elseif (res) then
-		-- assume that for now influx didnt send us more than 8k in body res
-		local body = res.body_reader(8192)
-
-		return false, body
-	else
-		return false, err_msg
-	end
-end
-
 function _M.do_write(self, msg)
 	local proto = self.proto
 
 	if (proto == 'http') then
-		return self:write_http(msg)
+		return util.write_http(msg, self)
 	elseif (proto == 'udp') then
-		return self:write_udp(msg)
+		return util.write_udp(msg, self.host, self.port)
 	else
 		return false, 'unknown proto'
 	end
@@ -117,7 +65,7 @@ function _M.add_field(self, key, value)
 
 	key = lp.quote_field_key(key)
 
-	if (type(value) == 'string') then
+	if type(value) == 'string' and not str_find(value, '^%d+i$') then
 		value = lp.quote_field_value(value)
 	end
 
@@ -254,25 +202,19 @@ function _M.write(self)
 end
 
 function _M.new(self, opts)
-	if (type(opts) ~= 'table') then
-		return false, 'opts must be a table'
+	local ok, err = util.validate_options(opts)
+	if not ok then
+		return false, err
 	end
-
-	local host      = opts.host or '127.0.0.1'
-	local port      = opts.port or 8086
-	local db        = opts.db or ''
-	local hostname  = opts.hostname or host
-	local proto     = opts.proto or 'http'
-	local precision = opts.precision or 'ms'
 
 	local t = {
 		-- user opts
-		host      = host,
-		port      = port,
-		db        = db,
-		hostname  = hostname,
-		proto     = proto,
-		precision = precision,
+		host      = opts.host,
+		port      = opts.port,
+		db        = opts.db,
+		hostname  = opts.hostname,
+		proto     = opts.proto,
+		precision = opts.precision,
 
 		-- obj fields
 		_tag_cnt   = 0,
@@ -282,25 +224,6 @@ function _M.new(self, opts)
 		_msg_cnt   = 0,
 		_msg_buf   = {},
 	}
-
-	if (type(host) ~= 'string') then
-		return nil, 'invalid host'
-	end
-	if (type(port) ~= 'number' or port < 0 or port > 65535) then
-		return nil, 'invalid port'
-	end
-	if (type(db) ~= 'string') then
-		return nil, 'invalid db'
-	end
-	if (type(hostname) ~= 'string') then
-		return nil, 'invalid hostname'
-	end
-	if (type(proto) ~= 'string' or (proto ~= 'http' and proto ~= 'udp')) then
-		return nil, 'invalid proto ' .. tostring(proto)
-	end
-	if (type(precision) ~= 'string') then
-		return nil, 'invalid precision'
-	end
 
 	return setmetatable(t, mt)
 end

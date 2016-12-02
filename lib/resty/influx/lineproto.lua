@@ -5,7 +5,7 @@ local str_find = string.find
 local str_fmt  = string.format
 local tbl_cat  = table.concat
 
-_M.version = "0.1"
+_M.version = "0.2"
 
 -- quoting routines based on
 -- https://docs.influxdata.com/influxdb/v1.0/write_protocols/line_protocol_reference/
@@ -40,16 +40,14 @@ function _M.quote_measurement(value)
 end
 
 function _M.build_tag_set(tags)
-	local num_tags = #tags
-
 	local tag_set = {}
-	local i = 0
 
-	for _, tag in pairs(tags) do
-		i = i + 1
+	for i = 1, #tags do
+		local tag      = tags[i]
+		local key, val = next(tag)
 
-		local key = _M.quote_tag_part(tag.key)
-		local val = _M.quote_tag_part(tag.value)
+		key = _M.quote_tag_part(key)
+		val = _M.quote_tag_part(val)
 
 		tag_set[i] = str_fmt("%s=%s", key, val)
 	end
@@ -59,19 +57,15 @@ function _M.build_tag_set(tags)
 end
 
 function _M.build_field_set(fields)
-	local num_fields = #fields
-
 	local field_set = {}
-	local i = 0
 
-	for _, field in pairs(fields) do
-		i = i + 1
+	for i = 1, #fields do
+		local field    = fields[i]
+		local key, val = next(field)
 
-		local key = _M.quote_field_key(field.key)
-
-		local val = field.value
-		if (type(val) == 'string') then
-			val = _M._M.quote_field_value(val)
+		key = _M.quote_field_key(key)
+		if type(val) == "string" and not str_find(val, '^%d+i$') then
+			val = _M.quote_field_value(val)
 		end
 
 		field_set[i] = str_fmt("%s=%s", key, val)

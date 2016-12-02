@@ -8,7 +8,7 @@ This library is in active development and is considered ready for production use
 
 ## Description
 
-This library provides an OpenResty interface to write data points to an InfluxDB server via UDP and HTTP interfaces. Object-based and buffering per-worker based interfaces are provided.
+This library provides an OpenResty interface to write data points to an InfluxDB server via UDP and HTTP interfaces. Object-based and buffering per-worker interfaces are provided.
 
 ## Synopsis
 
@@ -26,6 +26,7 @@ http {
 				proto = "http",
 				db = "db",
 				hostname = "localhost",
+				auth = "user:password",
 			})
 
 			if (not influx) then
@@ -35,7 +36,7 @@ http {
 
 			influx:set_measurement("foo")
 			influx:add_tag("foo", "bar")
-			influx:add_field("value, 1)
+			influx:add_field("value", 1)
 			influx:buffer()
 
 			-- add and buffer additional data points
@@ -44,7 +45,6 @@ http {
 
 			if (not ok) then
 				ngx.say(err)
-				end
 			end
 		}
 	}
@@ -101,7 +101,7 @@ lua-resty-influx provides a pure object-based interface, as well as a buffering 
 
 ####host
 
-*Default*: *127.0.0.1*
+*Default*: 127.0.0.1
 
 Sets the host to which `ngx.socket.udp` and `resty.http` will attempt to connect.
 
@@ -113,7 +113,7 @@ Sets the port to which `ngx.socket.udp` and `resty.http` will attempt to connect
 
 ####db
 
-*Default*: ''
+*Default*: 'lua-resty-influx'
 
 Sets the db to which `resty.http` will attempt to connect. This option is ignored when `udp` is the configured protocol.
 
@@ -121,21 +121,32 @@ Sets the db to which `resty.http` will attempt to connect. This option is ignore
 
 *Default*: `host`
 
-Sets the hostname to which `resty.http` will define the `Host` header for HTTP requests. This option is ignored when `udp` is the configured protocol.
+Sets the hostname to which `resty.http` will define the `Host` header for HTTP requests. By default, this is equal to the configured `host` option. This option is ignored when `udp` is the configured protocol.
 
 ####proto
 
 *Default*: http
 
-Sets the protocol by which `resty.influx` will connect to the remote server. Currently `http` and `udp` protocols are supported.
-
-Note that UDP can present a significant performance improvement, particularly when sending many small sets of data points, at the cost of error handling.
+Sets the protocol by which `resty.influx` will connect to the remote server. Note that UDP can present a significant performance improvement, particularly when sending many small sets of data points, at the cost of error handling and authentication.
+>>>>>>> Refactor and clean up
 
 ####precision
 
 *Default*: ms
 
-Sets the timestamp precision by which `resty.influx` will define timestamps. Currently, `ms`, `s, and `none` are support; when `none` is configured, no stamp will be sent as part of the line protocol message, and the remote Influx server will use nannosecond precision based on the server-local clock.
+Sets the timestamp precision by which `resty.influx` will define timestamps. Currently, `ms`, `s`, and `none` are supported; when `none` is configured, no stamp will be sent as part of the line protocol message, and the remote Influx server will use nanosecond precision based on the server-local clock.
+
+####ssl
+
+*Default*: false
+
+Configures HTTP requests to perform a TLS handshake before sending data. This option is ignored when `udp` is the configured protocol.
+
+####auth
+
+*Default*: ''
+
+Sets the username and password presented to remote HTTP(S). This value must be given as a single string in the format `user:password`. This option is ignored when `udp` is the configured protocol.
 
 ###Object-Oriented Interface
 
@@ -157,7 +168,7 @@ Adds a data point tag as a key-value pair. Keys and values are escaped according
 
 *Syntax*: influx:add_field(key, value)
 
-Add a data point field as a key-value pair. Fields and values are escaped according to (https://docs.influxdata.com/influxdb/v1.0/write_protocols/line_protocol_reference/).
+Add a data point field as a key-value pair. Fields and values are escaped according to (https://docs.influxdata.com/influxdb/v1.0/write_protocols/line_protocol_reference/). Integer values (number values appended with an `i`) are properly interpolated.
 
 ####influx:stamp
 
@@ -175,7 +186,7 @@ Clears the measurement, tags, and fields on the data point associated with the c
 
 *Syntax*: local ok, err = influx:buffer()
 
-Buffer the contents of the data point associated with the current object for later flushing. Returns true on success; otherwise, returns false and a string describing the error (such as invalid conditions in which to buffer)
+Buffer the contents of the data point associated with the current object for later flushing. Returns true on success; otherwise, returns false and a string describing the error (such as invalid conditions under which to buffer).
 
 ####influx:flush
 
@@ -201,7 +212,7 @@ Buffers a new data point in the per-worker process buffer. `data_table` must be 
 
 * `measurement`: String denoting the measurement of the data point
 * `tags`: Integer-indexed table containing tables of key-value pairs denoting the tag elements. See the synopsis for examples.
-* `fiekds`: Integer-indexed table containing tables of key-value pairs denoting the field elements. See the synopsis for examples.
+* `fields`: Integer-indexed table containing tables of key-value pairs denoting the field elements. See the synopsis for examples.
 
 Note that currently the timestamp is automatically set with `ms` precision.
 
@@ -212,13 +223,6 @@ Note that currently the timestamp is automatically set with `ms` precision.
 Write all data points buffered in the current worker process to the configured influx host. Returns true on success; otherwise, returns false and a string describing the error from `ngx.timer.at`.
 
 This operation returns immediately and runs asynchronously
-
-## TODO
-
-* Refactor and remove duplicate code
-* Tests for per-worker buffering interface
-* TLS handling for HTTP interface
-* Extended HTTP interface (client queries, etc)
 
 ## License
 

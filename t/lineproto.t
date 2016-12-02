@@ -14,7 +14,7 @@ __DATA__
 			local lp = require "resty.influx.lineproto"
 
 			local tags = {
-				{ key = "foo", value = "bar" }
+				{ foo = "bar" }
 			}
 
 			ngx.say(lp.build_tag_set(tags))
@@ -29,17 +29,17 @@ foo=bar
 --- no_error_log
 [error]
 
-=== TEST 2: build_fieldset
+=== TEST 2a: build_fieldset
 --- config
 	location /t {
 		content_by_lua '
 			local lp = require "resty.influx.lineproto"
 
 			local fields = {
-				{ key = "foo", value = "bar" }
+				{ foo = "bar" }
 			}
 
-			ngx.say(lp.build_tag_set(fields))
+			ngx.say(lp.build_field_set(fields))
 
 		';
 	}
@@ -47,7 +47,29 @@ foo=bar
 GET /t
 --- error_code: 200
 --- response_body
-foo=bar
+foo="bar"
+--- no_error_log
+[error]
+
+=== TEST 2b: build_fieldset (integer)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			local fields = {
+				{ foo = "2i" }
+			}
+
+			ngx.say(lp.build_field_set(fields))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+foo=2i
 --- no_error_log
 [error]
 
