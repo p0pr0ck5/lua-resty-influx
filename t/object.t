@@ -119,14 +119,18 @@ GET /t
 
 			influx:add_tag("foo", "bar")
 
-			ngx.say(influx._tag_set[1])
+			local k, v = next(influx._tag_set[1])
+
+			ngx.say(k)
+			ngx.say(v)
 		';
 	}
 --- request
 GET /t
 --- error_code: 200
 --- response_body
-foo=bar
+foo
+bar
 --- no_error_log
 [error]
 
@@ -164,14 +168,18 @@ GET /t
 
 			influx:add_field("foo", "bar")
 
-			ngx.say(influx._field_set[1])
+			local k, v = next(influx._field_set[1])
+
+			ngx.say(k)
+			ngx.say(v)
 		';
 	}
 --- request
 GET /t
 --- error_code: 200
 --- response_body
-foo="bar"
+foo
+bar
 --- no_error_log
 [error]
 

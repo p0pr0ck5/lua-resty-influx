@@ -51,27 +51,18 @@ end
 function _M.add_tag(self, key, value)
 	local tag_cnt = self._tag_cnt + 1
 
-	key   = lp.quote_tag_part(key)
-	value = lp.quote_tag_part(value)
-
 	self._tag_cnt = tag_cnt
 
 	-- TODO sort tags by keys
-	self._tag_set[tag_cnt] = str_fmt("%s=%s", key, value)
+	self._tag_set[tag_cnt] = { [key] = value }
 end
 
 function _M.add_field(self, key, value)
 	local field_cnt = self._field_cnt + 1
 
-	key = lp.quote_field_key(key)
-
-	if type(value) == 'string' and not str_find(value, '^%d+i$') then
-		value = lp.quote_field_value(value)
-	end
-
 	self._field_cnt = field_cnt
 
-	self._field_set[field_cnt] = str_fmt("%s=%s", key, value)
+	self._field_set[field_cnt] = { [key] = value }
 end
 
 function _M.set_measurement(self, measurement)
@@ -156,6 +147,9 @@ function _M.buffer(self)
 		return false, err_msg
 	end
 
+	self._tag_set   = lp.build_tag_set(self._tag_set)
+	self._field_set = lp.build_field_set(self._field_set)
+
 	self:timestamp()
 
 	local msg = lp.build_line_proto_stmt(self)
@@ -189,6 +183,9 @@ function _M.write(self)
 	if (not ready) then
 		return false, err_msg
 	end
+
+	self._tag_set   = lp.build_tag_set(self._tag_set)
+	self._field_set = lp.build_field_set(self._field_set)
 
 	self:timestamp()
 
