@@ -1,6 +1,6 @@
 use Test::Nginx::Socket::Lua;
 
-plan tests => 3 * blocks() - 1;
+plan tests => 3 * blocks();
 
 no_shuffle();
 run_tests();
@@ -796,3 +796,38 @@ do_write failed
 --- no_error_log
 [error]
 
+=== TEST 32: auth option sets the auth header
+--- http_config
+server {
+	listen 12345;
+	location / {
+		access_by_lua_block { ngx.log(ngx.INFO, ngx.var.http_Authorization) }
+		return 204;
+	}
+}
+--- config
+	location /t {
+		content_by_lua '
+			local iobj = require "resty.influx.object"
+
+			local influx = iobj:new({
+				auth = "user:pass",
+				host = "127.0.0.1",
+				port = 12345,
+			})
+
+			local ok, err = influx:do_write("foo bar")
+			ngx.say(ok)
+			ngx.say(err)
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+true
+nil
+--- error_log
+Basic dXNlcjpwYXNz
+--- no_error_log
+[error]

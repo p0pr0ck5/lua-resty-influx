@@ -103,7 +103,6 @@ server {
 				port = 12345,
 				db = "testdb",
 				hostname = "hostname.tld",
-				proto = "udp",
 				precision = "s"
 			}
 
@@ -172,7 +171,6 @@ server {
 				port = 12345,
 				db = "testdb",
 				hostname = "hostname.tld",
-				proto = "udp",
 				precision = "s"
 			}
 
@@ -209,7 +207,6 @@ server {
 				port = 12345,
 				db = "testdb",
 				hostname = "hostname.tld",
-				proto = "udp",
 				precision = "s"
 			}
 
@@ -247,7 +244,6 @@ server {
 				port = 12345,
 				db = "testdb",
 				hostname = "hostname.tld",
-				proto = "udp",
 				precision = "s",
 				auth = "user:pass"
 			}
