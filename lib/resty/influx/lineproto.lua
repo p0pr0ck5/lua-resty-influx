@@ -12,14 +12,27 @@ local warn = function(msg)
 	return log(WARN, msg)
 end
 
+local bool_strs = { '^t$', '^T$', '^true$', '^True$', '^TRUE$', '^f$', '^F$', '^false$', '^False$', '^FALSE$' }
+
 _M.version = "0.2"
 
 -- quoting routines based on
 -- https://docs.influxdata.com/influxdb/v1.0/write_protocols/line_protocol_reference/
 
 function _M.quote_field_value(value)
-	value = str_gsub(value, '"', '\\"')
+	-- number (float or integer) checks
+	if type(value) ~= 'string' or str_find(value, '^%d+i$') then
+		return value
+	end
 
+	-- boolean checks
+	for i = 1, 10 do
+		if str_find(value, bool_strs[i]) then
+			return value
+		end
+	end
+
+	value = str_gsub(value, '"', '\\"')
 	return str_fmt('"%s"', value)
 end
 
@@ -85,9 +98,7 @@ function _M.build_field_set(fields)
 		local key, val = next(field)
 
 		key = _M.quote_field_key(key)
-		if type(val) == "string" and not str_find(val, '^%d+i$') then
-			val = _M.quote_field_value(val)
-		end
+		val = _M.quote_field_value(val)
 
 		field_set[i] = str_fmt("%s=%s", key, val)
 	end

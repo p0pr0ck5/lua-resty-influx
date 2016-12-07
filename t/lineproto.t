@@ -137,7 +137,7 @@ Invalid fields table
 --- no_error_log
 [error]
 
-=== TEST 3: quote_field_value
+=== TEST 3a: quote_field_value (string)
 --- config
 	location /t {
 		content_by_lua '
@@ -152,6 +152,224 @@ GET /t
 --- error_code: 200
 --- response_body
 "foo"
+--- no_error_log
+[error]
+
+=== TEST 3b: quote_field_value (float)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			local float = tonumber(12.345)
+
+			ngx.say(lp.quote_field_value(float))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+12.345
+--- no_error_log
+[error]
+
+=== TEST 3c: quote_field_value (integer)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			ngx.say(lp.quote_field_value("42i"))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+42i
+--- no_error_log
+[error]
+
+=== TEST 3d: quote_field_value (float with integer hint)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			ngx.say(lp.quote_field_value("42.5i"))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+"42.5i"
+--- no_error_log
+[error]
+
+=== TEST 3e: quote_field_value (string with single quote)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			ngx.say(lp.quote_field_value("fo\'o"))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+"fo'o"
+--- no_error_log
+[error]
+
+=== TEST 3f: quote_field_value (string with double quote)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			ngx.say(lp.quote_field_value([[fo"o]]))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+"fo\"o"
+--- no_error_log
+[error]
+
+=== TEST 3g: quote_field_value (bool) (1/5)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			ngx.say(lp.quote_field_value("t"))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+t
+--- no_error_log
+[error]
+
+=== TEST 3h: quote_field_value (bool) (2/5)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			ngx.say(lp.quote_field_value("T"))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+T
+--- no_error_log
+[error]
+
+=== TEST 3i: quote_field_value (bool) (3/5)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			ngx.say(lp.quote_field_value("true"))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+true
+--- no_error_log
+[error]
+
+=== TEST 3j: quote_field_value (bool) (4/5)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			ngx.say(lp.quote_field_value("True"))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+True
+--- no_error_log
+[error]
+
+=== TEST 3k: quote_field_value (bool) (5/5)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			ngx.say(lp.quote_field_value("TRUE"))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+TRUE
+--- no_error_log
+[error]
+
+=== TEST 3l: quote_field_value (bool) (6/5)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			ngx.say(lp.quote_field_value("tRUE"))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+"tRUE"
+--- no_error_log
+[error]
+
+=== TEST 3m: quote_field_value (string with bool-looking value)
+--- config
+	location /t {
+		content_by_lua '
+			local lp = require "resty.influx.lineproto"
+
+			ngx.say(lp.quote_field_value("this string has the word true in it"))
+
+		';
+	}
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+"this string has the word true in it"
 --- no_error_log
 [error]
 
