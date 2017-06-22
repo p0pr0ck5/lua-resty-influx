@@ -95,115 +95,115 @@ http {
 
 ## Usage
 
-###Options
+### Options
 
 lua-resty-influx provides a pure object-based interface, as well as a buffering interface that stores data points per-worker, and then buffers asynchronously via `ngx.timer.at`. Creation of the buffering interface should be handled in the `init_worker_by_lua` phase via the `resty.influx.buffer.init` function; creation of the object-oriented interface should be handled in your appropriate phase handler via `resty.influx.object:new`. In both cases, the following options are available:
 
-####host
+#### host
 
 *Default*: 127.0.0.1
 
 Sets the host to which `ngx.socket.udp` and `resty.http` will attempt to connect.
 
-####port
+#### port
 
 *Default*: 8086
 
 Sets the port to which `ngx.socket.udp` and `resty.http` will attempt to connect. Defaults to `8086` as the default protocol is HTTP.
 
-####db
+#### db
 
 *Default*: 'lua-resty-influx'
 
 Sets the db to which `resty.http` will attempt to connect. This option is ignored when `udp` is the configured protocol.
 
-####hostname
+#### hostname
 
 *Default*: `host`
 
 Sets the hostname to which `resty.http` will define the `Host` header for HTTP requests. By default, this is equal to the configured `host` option. This option is ignored when `udp` is the configured protocol.
 
-####proto
+#### proto
 
 *Default*: http
 
 Sets the protocol by which `resty.influx` will connect to the remote server. Note that UDP can present a significant performance improvement, particularly when sending many small sets of data points, at the cost of error handling and authentication.
 
-####precision
+#### precision
 
 *Default*: ms
 
 Sets the timestamp precision by which `resty.influx` will define timestamps. Currently, `ms`, `s`, and `none` are supported; when `none` is configured, no stamp will be sent as part of the line protocol message, and the remote Influx server will use nanosecond precision based on the server-local clock.
 
-####ssl
+#### ssl
 
 *Default*: false
 
 Configures HTTP requests to perform a TLS handshake before sending data. This option is ignored when `udp` is the configured protocol.
 
-####auth
+#### auth
 
 *Default*: ''
 
 Sets the username and password presented to remote HTTP(S). This value must be given as a single string in the format `user:password`. This option is ignored when `udp` is the configured protocol.
 
-###Object-Oriented Interface
+### Object-Oriented Interface
 
 The following methods are available via the object interface:
 
-####influx:set_measurement
+#### influx:set_measurement
 
 *Syntax*: influx:set_measurement(string)
 
 Sets the measurement for the data point associated with the current object.
 
-####influx:add_tag
+#### influx:add_tag
 
 *Syntax* influx:add_tag(key, value)
 
 Adds a data point tag as a key-value pair. Keys and values are escaped according to (https://docs.influxdata.com/influxdb/v1.0/write_protocols/line_protocol_reference/).
 
-####influx:add_field
+#### influx:add_field
 
 *Syntax*: influx:add_field(key, value)
 
 Add a data point field as a key-value pair. Fields and values are escaped according to (https://docs.influxdata.com/influxdb/v1.0/write_protocols/line_protocol_reference/). Integer values (number values appended with an `i`) are properly interpolated.
 
-####influx:stamp
+#### influx:stamp
 
 *Syntax*: influx:stamp(time?)
 
 Stamps the data point associated with the current object, with an optional arbitrary value (must be provided as a number); otherwise, this stamps the object with the appropriate value based on the precision specified via the options given to `new` for the object interface.
 
-####influx:clear
+#### influx:clear
 
 *Syntax* influx:clear()
 
 Clears the measurement, tags, and fields on the data point associated with the current object. Note that this is called internally when `buffer` or  `write` are called.
 
-####influx:buffer
+#### influx:buffer
 
 *Syntax*: local ok, err = influx:buffer()
 
 Buffer the contents of the data point associated with the current object for later flushing. Returns true on success; otherwise, returns false and a string describing the error (such as invalid conditions under which to buffer).
 
-####influx:flush
+#### influx:flush
 
 *Syntax*: local ok, err = influx:flush()
 
 Flushes all buffered data points associated with the current object. Returns true on success; otherwise, returns false and a string describing the error (such as leftover data waiting to be buffered, or no available buffered data points).
 
-####influx:write
+#### influx:write
 
 *Syntax* local ok, err = inflush:write()
 
 Writes the data point associated with the current object, without clearing the existing object buffer. This is essentially shorthand for calling `buffer` and `flush` on a single data point. Note that previously buffered data points still remain in the buffer, and must be sent out via `flush` if desired.
 
-###Buffering Interface
+### Buffering Interface
 
 The following functions are available via the buffering interface:
 
-####influx.buffer
+#### influx.buffer
 
 *Syntax*: influx.buffer(data_table)
 
@@ -215,7 +215,7 @@ Buffers a new data point in the per-worker process buffer. `data_table` must be 
 
 Note that currently the timestamp is automatically set with `ms` precision.
 
-####influx.flush
+#### influx.flush
 
 *Syntax* influx.flush()
 
