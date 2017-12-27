@@ -54,7 +54,7 @@ function _M.write_http(msg, params)
 	local res, err = client:request_uri(
 		path,
 		{
-			query      = str_fmt("db=%s&precision=%s", params.db, params.precision),
+			query      = { db = params.db, precision = params.precision },
 			method     = method,
 			headers    = headers,
 			body       = msg,
