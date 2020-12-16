@@ -43,6 +43,7 @@ function _M.write_http(msg, params)
 
 	local path    = str_fmt('%s://%s:%s/write', scheme, params.host, params.port)
 	local method  = 'POST'
+	local retries  = params.retries
 	local headers = {
 		["Host"]  = params.hostname
 	}
@@ -51,25 +52,27 @@ function _M.write_http(msg, params)
 		headers.Authorization = str_fmt("Basic %s", encode_base64(params.auth))
 	end
 
-	local res, err = client:request_uri(
-		path,
-		{
-			query      = { db = params.db, precision = params.precision },
-			method     = method,
-			headers    = headers,
-			body       = msg,
-			ssl_verify = ssl_verify,
-		}
-	)
+	for retry = 1, retries do
+		local res, err = client:request_uri(
+			path,
+			{
+				query      = { db = params.db, precision = params.precision },
+				method     = method,
+				headers    = headers,
+				body       = msg,
+				ssl_verify = ssl_verify,
+			}
+		)
 
-	if not res then
-		return false, err
-	end
-
-	if res.status == HTTP_NO_CONTENT then
-		return true
-	else
-		return false, res.body
+		if not res then
+			if retry == retries then
+				return false, err
+			end
+		elseif res.status == HTTP_NO_CONTENT then
+			return true
+		else
+			return false, res.body
+		end
 	end
 end
 
@@ -86,6 +89,7 @@ function _M.validate_options(opts)
 	opts.precision = opts.precision or 'ms'
 	opts.ssl       = opts.ssl or false
 	opts.auth      = opts.auth or nil
+	opts.retries   = opts.retries or 1
 
 	if type(opts.host) ~= 'string' then
 		return false, 'invalid host'
@@ -110,6 +114,9 @@ function _M.validate_options(opts)
 	end
 	if opts.auth and type(opts.auth) ~= 'string' then
 		return false, 'invalid auth'
+	end
+	if type(opts.retries) ~= 'number' or opts.retries < 1 then
+		return false, 'invalid retries'
 	end
 	return true
 end
